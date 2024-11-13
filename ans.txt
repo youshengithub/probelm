@@ -1,3 +1,74 @@
+class DBPool {
+    constructor(cpuCores, memSize, price, number) {
+        this.cpuCores = cpuCores;
+        this.memSize = memSize;
+        this.price = price;
+        this.number = number;
+    }
+}
+
+const writeCpuReq = 2;
+const readCpuReq = 10;
+const memSizeReq = 8;
+const dbPools = [
+    new DBPool(4, 8, 2, 2),
+    new DBPool(4, 8, 3, 3),
+    new DBPool(2, 8, 3, 4)
+];
+
+let minCost = -1;
+
+for (let i = 0; i < dbPools.length; ++i) {
+    // Candidate master
+    const master = dbPools[i];
+    if (master.memSize < memSizeReq || master.cpuCores < writeCpuReq || master.number < 1)
+        continue;
+
+    // Remaining CPU capacity on master for read
+    const masterReadCpu = master.cpuCores - writeCpuReq;
+
+    for (let j = 0; j < dbPools.length; ++j) {
+        // Candidate slave
+        const slave = dbPools[j];
+        if (slave.memSize < memSizeReq || slave.cpuCores < writeCpuReq / 2)
+            continue;
+
+        // Number of slaves to consider
+        const maxSlaves = slave.number;
+        if (maxSlaves === 0)
+            continue;
+
+        // Slaves must have identical specs
+        const nSlavesStart = 1;
+        for (let nSlaves = nSlavesStart; nSlaves <= maxSlaves; ++nSlaves) {
+            // Remaining CPU capacity on slaves for read
+            const totalSlaveReadCpu = nSlaves * (slave.cpuCores - writeCpuReq / 2);
+
+            // Total read CPU capacity
+            const totalReadCpu = masterReadCpu + totalSlaveReadCpu;
+            if (totalReadCpu < readCpuReq)
+                continue;
+
+            // Check availability
+            if (master.number < 1 || slave.number < nSlaves)
+                continue;
+
+            // Total cost
+            const totalCost = master.price * 1 + slave.price * nSlaves;
+
+            if (minCost === -1 || totalCost < minCost)
+                minCost = totalCost;
+        }
+    }
+}
+
+console.log(minCost);
+
+
+
+
+
+**************************************************************************************
 class Node {
     constructor(name) {
         this.name = name;
