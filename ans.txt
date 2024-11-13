@@ -1,1 +1,134 @@
-test code 
+class Node {
+    constructor(name) {
+        this.name = name;
+        this.children = [];
+    }
+}
+
+function buildTree(elementsTree) {
+    let levelNodes = [];
+    let root = null;
+
+    for (const line of elementsTree) {
+        let level = 0;
+        let idx = 0;
+        // Count the number of "|-"
+        while (idx + 1 < line.length && line[idx] === '|' && line[idx + 1] === '-') {
+            level++;
+            idx += 2;
+        }
+        // Get the node name
+        const name = line[idx];
+
+        // Create a new node
+        const node = new Node(name);
+
+        // Ensure the levelNodes array is large enough
+        if (levelNodes.length <= level) {
+            levelNodes.length = level + 1;
+        }
+
+        // Set the node at the current level
+        levelNodes[level] = node;
+
+        if (level === 0) {
+            // This is the root node
+            root = node;
+        } else {
+            // Add the node as a child of the parent node
+            levelNodes[level - 1].children.push(node);
+        }
+    }
+
+    return root;
+}
+
+function getAllPaths(node, path, allPaths) {
+    if (!node) return;
+    path.push(node.name);
+
+    if (node.children.length === 0) {
+        // This is a leaf node, add the path to allPaths
+        allPaths.push([...path]);
+    } else {
+        // Recursively traverse the children
+        for (const child of node.children) {
+            getAllPaths(child, path, allPaths);
+        }
+    }
+
+    path.pop();
+}
+
+function findMatchingSubpaths(path, target, matches, minLength) {
+    const L = path.length;
+    const T = target.length;
+    for (let i = 0; i < L; ++i) {
+        let k = 0;
+        let s_sub = '';
+        for (let j = i; j < L; ++j) {
+            s_sub += path[j];
+            if (path[j] === target[k]) {
+                k++;
+            }
+            if (k === T) {
+                const length = j - i + 1;
+                if (length < minLength.value) {
+                    matches.length = 0;
+                    matches.push(s_sub);
+                    minLength.value = length;
+                } else if (length === minLength.value) {
+                    matches.push(s_sub);
+                }
+                break;
+            }
+        }
+    }
+}
+
+// Example input
+const elementsTree = [
+    "D",
+    "|-A",
+    "|-|-B",
+    "|-|-|-C",
+    "|-|-|-|-G",
+    "|-|-|-|-|-F",
+    "|-|-C",
+    "|-|-|-A",
+    "|-|-|-|-G"
+];
+const target = "ACG";
+
+// Build the tree
+const root = buildTree(elementsTree);
+
+// Generate all root-to-leaf paths
+const allPaths = [];
+const currentPath = [];
+getAllPaths(root, currentPath, allPaths);
+
+// Find matching subpaths among all paths
+let allMatches = [];
+let minLength = { value: Number.MAX_SAFE_INTEGER };
+for (const path of allPaths) {
+    const matches = [];
+    const pathMinLength = { value: Number.MAX_SAFE_INTEGER };
+    findMatchingSubpaths(path, target, matches, pathMinLength);
+
+    if (pathMinLength.value < minLength.value) {
+        minLength.value = pathMinLength.value;
+        allMatches = matches;
+    } else if (pathMinLength.value === minLength.value) {
+        allMatches = allMatches.concat(matches);
+    }
+}
+
+// Output the result
+if (allMatches.length === 0) {
+    console.log("");
+} else {
+    // Find the lex smallest subpath
+    allMatches.sort();
+    console.log(allMatches[0]);
+}
